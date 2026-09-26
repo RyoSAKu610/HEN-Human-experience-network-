@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api, myOwners } from "@/lib/client.ts";
 import type { Capsule, LicenseRequest } from "@/lib/types.ts";
 import { WorldVerify } from "./WorldVerify.tsx";
+import { ScreeningBadge } from "./AgentTab.tsx";
 
 type Row = Omit<LicenseRequest, "token" | "secretHash"> & { capsuleTitle?: string };
 
@@ -58,6 +59,8 @@ export function ApprovalsTab({ onChange }: { onChange: (pending: number) => void
               </p>
             )}
             <p className="small">wants to use <b>“{r.capsuleTitle}”</b></p>
+            {(r.screenings ?? []).map((x, i) => <ScreeningBadge key={i} s={x} />)}
+            {r.status === "blocked" && <p className="small err">Blocked by Intercepta before it could reach you. No approval or payment is possible.</p>}
             <p className="small muted">Purpose: {r.purpose}</p>
             {r.status === "pending" && (
               <>

@@ -29,7 +29,9 @@ export interface VaultEntry {
   createdAt: number;
 }
 
-export type LicenseStatus = "pending" | "approved" | "declined" | "cancelled" | "expired";
+export type LicenseStatus = "blocked" | "pending" | "awaiting_payment" | "approved" | "declined" | "cancelled" | "expired";
+
+export interface ScreeningLite { address: string; mode: "live" | "demo"; toxicScore: number | null; traits: { name: string; description?: string }[]; verdict: "allow" | "review" | "block"; reasons: string[]; checkedAt: number }
 
 export interface LicenseRequest {
   id: string;
@@ -44,6 +46,8 @@ export interface LicenseRequest {
   proofNonce?: string;
   token?: string; // bearer token for the agent after approval
   secretHash: string; // sha256 of the requester's poll secret
+  payer?: string; // wallet that will pay via x402 (screened by Intercepta)
+  screenings?: ScreeningLite[]; // every Intercepta check, newest last
 }
 
 export interface MatchSummary {

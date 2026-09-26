@@ -91,3 +91,24 @@ test("Monid demo pipeline: discover → inspect → run", async () => {
   const r = await call("/api/monid", { op: "run", provider: t.provider, endpoint: t.endpoint, input: i.data.exampleInput });
   assert.equal(r.data.status, "COMPLETED");
 });
+
+test("Intercepta blocks a sanctioned payer before the request reaches the owner", async () => {
+  const q = await call("/api/ask", { question: "startup about to fail runway" });
+  const lic = (await call("/api/ask", { question: "startup about to fail runway investors bridge" })).data.matches.find((m: any) => m.consent === "licensable")
+    ?? q.data.matches.find((m: any) => m.consent === "licensable");
+  // fall back: publish one licensable capsule if none in the top matches
+  let capId = lic?.id;
+  if (!capId) {
+    const cap = { title: "Runway crisis", domain: "startup", situation: "Our startup was about to fail with weeks of runway.", decision: "We cut burn.", failure: "We waited too long.", lesson: "Buy time first.", tags: [] };
+    const h = crypto.createHash("sha256").update(JSON.stringify(cap)).digest("hex");
+    const c = await call("/api/world/context", { purpose: "contribute", draftHash: h });
+    capId = (await call("/api/capsules", { capsule: cap, consent: "licensable", proof: proof(c.data.rp_context.nonce) })).data.capsule.id;
+  }
+  const bad = await call("/api/licenses", { capsuleId: capId, agent: "bad-agent.eth", purpose: "x", payer: "0x8589427373D6D84E98730D7795D8f6f8731FDA16" });
+  assert.equal(bad.status, 403);
+  assert.equal(bad.data.license.status, "blocked");
+  assert.match(bad.data.error, /sanction_address/);
+  const good = await call("/api/licenses", { capsuleId: capId, agent: "good-agent.eth", purpose: "x", payer: "0x1111111111111111111111111111111111111111" });
+  assert.equal(good.status, 201);
+  assert.equal(good.data.license.screenings[0].verdict, "allow");
+});

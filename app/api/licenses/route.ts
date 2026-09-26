@@ -2,11 +2,12 @@ import { json, bad, body } from "@/lib/http.ts";
 import { db, newId } from "@/lib/store.ts";
 import crypto from "node:crypto";
 import { resolveAgent } from "@/lib/ens.ts";
+import { screenOrBlock } from "@/lib/intercepta.ts";
 const sha = (x: string) => crypto.createHash("sha256").update(x).digest("hex");
 const TTL = 15 * 60_000;
 /** An AI agent asks to use one capsule. Nothing is shared until the owner approves. */
 export async function POST(req: Request) {
-  const b = await body<{ capsuleId?: string; agent?: string; purpose?: string; signature?: `0x${string}` }>(req);
+  const b = await body<{ capsuleId?: string; agent?: string; purpose?: string; signature?: `0x${string}`; payer?: string }>(req);
   const c = b.capsuleId ? db.capsule(b.capsuleId) : null;
   if (!c) return bad("unknown capsule", 404);
   if (c.consent !== "licensable") return bad("the owner keeps this experience private", 403);
@@ -19,10 +20,17 @@ export async function POST(req: Request) {
   } catch (e) {
     return bad(`ENS: ${(e as Error).message}`, 422);
   }
+  // Intercepta: screen the wallet that will pay BEFORE the request can reach the owner.
+  const payer = (b.payer?.trim() || agentEns.address).toLowerCase();
+  if (!/^0x[0-9a-f]{40}$/.test(payer)) return bad("payer must be an EVM address");
+  const screenings = [await screenOrBlock(payer)];
+  if (payer !== agentEns.address.toLowerCase()) screenings.push(await screenOrBlock(agentEns.address));
+  const blocked = screenings.find((x) => x.verdict === "block");
   const secret = "hen_req_" + crypto.randomBytes(18).toString("hex");
-  const l = { secretHash: sha(secret), id: newId("lic"), capsuleId: c.id, agent: agentEns.name, agentEns, purpose, status: "pending" as const, createdAt: Date.now(), expiresAt: Date.now() + TTL };
+  const l = { secretHash: sha(secret), id: newId("lic"), capsuleId: c.id, agent: agentEns.name, agentEns, purpose, payer, screenings, status: (blocked ? "blocked" : "pending") as "blocked" | "pending", createdAt: Date.now(), expiresAt: Date.now() + TTL };
   db.addLicense(l);
   const { secretHash: _s, ...pub } = l;
+  if (blocked) return json({ license: pub, error: `Blocked by Intercepta: ${blocked.reasons.join("; ")}` }, 403);
   // The secret is shown once; the agent uses it to collect its access token after approval.
   return json({ license: pub, secret }, 201);
 }

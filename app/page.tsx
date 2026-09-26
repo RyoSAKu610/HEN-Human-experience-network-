@@ -7,7 +7,7 @@ import { ApprovalsTab } from "@/components/ApprovalsTab.tsx";
 import { AgentTab } from "@/components/AgentTab.tsx";
 import { Logo } from "@/components/Logo.tsx";
 
-type Status = { world: { mode: string; environment?: string }; monid: { mode: string }; ai: { mode: string }; capsules: number; humans: number };
+type Status = { world: { mode: string; environment?: string }; monid: { mode: string }; intercepta: { mode: string }; x402: { mode: string; price?: string }; ai: { mode: string }; capsules: number; humans: number };
 const TABS = ["Ask", "Share an experience", "Approvals", "Agent"] as const;
 type Tab = (typeof TABS)[number];
 
@@ -27,6 +27,8 @@ export default function Home() {
           <div className="chips">
             <span className={"chip " + st.world.mode}>World ID · {st.world.mode}{st.world.environment ? ` (${st.world.environment})` : ""}</span>
             <span className={"chip " + st.monid.mode}>Monid · {st.monid.mode}</span>
+            <span className={"chip " + st.intercepta.mode}>Intercepta · {st.intercepta.mode}</span>
+            <span className={"chip " + (st.x402.mode === "live" ? "live" : "")}>x402 · {st.x402.mode === "live" ? st.x402.price : "off"}</span>
             <span className="chip">Capsules · {st.ai.mode}</span>
             <span className="chip">{st.capsules} experiences · {st.humans} humans</span>
           </div>

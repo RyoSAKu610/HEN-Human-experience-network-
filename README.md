@@ -20,6 +20,22 @@ ETHGlobal Tokyo 2026.
 
 Without keys, World ID and Monid run in **demo mode**. The chips in the header show `demo` or `live`. Demo World ID is a simulator dialog, but the server still enforces the single-use nonce, the signal binding and the owner nullifier. It also has a “Verify as someone else” button, which shows the server rejecting a different human.
 
+## ENS · Intercepta · x402 (agent side)
+
+HEN protects the human side with World ID. The agent side has three safeguards:
+
+- **ENS is the agent's identity.** A license request must name an ENS agent (`my-agent.eth`). HEN resolves it on Ethereum mainnet, loads its avatar and description, and can check that the request was signed by the resolved address. Code: `lib/ens.ts`.
+- **Intercepta screens before any money moves.** The paying wallet (and the ENS address) goes through Intercepta Quick Scan (`GET /account/{address}/quick-scan`, `X-API-KEY`) when the request is made. Hard traits (`sanction_address`, `known_scammer`, `blacklist`, `attack_money_target`, `fake_phishing_transfer`) or a toxic score of 70 or more block the request with visible reasons, and it never reaches the owner. A score of 40–69 is flagged for the owner to review. If the screen itself fails, the request is blocked. Code: `lib/intercepta.ts`.
+- **x402 makes the license paid.** After the owner's fresh World ID approval, the agent pays USDC on Base Sepolia through x402 (`POST /api/licenses/:id/access`, `@x402/next` `withX402`). Inside the handler, before settlement, HEN checks that the payment was signed by the wallet that was screened, then **runs Intercepta again** on the payer. `withX402` settles only if the handler returns less than 400, so a blocked payer's USDC never moves. Code: `app/api/licenses/[id]/access/route.ts`.
+
+Demo: on the Agent tab, click “Try a sanctioned wallet”. That request is **blocked** with the reason `sanction_address`. A normal wallet is **allowed**, then paid and unlocked after approval.
+
+### Intercepta API feedback
+- The `quick-scan` response (`toxicScore` + `traits[]`) was easy to map to allow / review / block. A short published list of every trait name with a severity would make policies safer than hard-coding names.
+- The path lives under `/api/public/v2/extension/...`. The word “extension” suggests it's for the browser extension, and a documented `/v2/account/...` alias would be clearer for server-side payment flows.
+- Please document whether `toxicScore` is 0–100 on every endpoint (quick vs deep scan), plus the recommended block and review thresholds for payments.
+- An official x402 example (screen `authorization.from` before settlement) would save every team the same glue code.
+
 ## Run
 
 ```bash
