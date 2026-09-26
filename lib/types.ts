@@ -1,0 +1,55 @@
+export type Domain = "startup" | "career" | "relationships" | "family" | "craft" | "money" | "health" | "migration";
+
+export type Consent = "licensable" | "private";
+
+/** Anonymized, shareable distillation of one lived experience. */
+export interface CapsuleBody {
+  title: string;
+  domain: Domain;
+  situation: string; // what happened
+  decision: string; // what decision was made
+  failure: string; // what failed
+  lesson: string; // what the person learned
+  tags: string[];
+}
+
+export interface Capsule extends CapsuleBody {
+  id: string;
+  consent: Consent;
+  ownerNullifier: string; // RP-scoped World ID nullifier (hex). Never an identity.
+  vaultId: string | null; // pointer to client-encrypted original memory
+  verified: "world-id" | "demo" | "seed";
+  createdAt: number;
+}
+
+export interface VaultEntry {
+  id: string;
+  ciphertext: string; // base64 AES-GCM, key never leaves the owner's browser
+  iv: string;
+  createdAt: number;
+}
+
+export type LicenseStatus = "pending" | "approved" | "declined" | "cancelled" | "expired";
+
+export interface LicenseRequest {
+  id: string;
+  capsuleId: string;
+  agent: string;
+  purpose: string;
+  status: LicenseStatus;
+  createdAt: number;
+  expiresAt: number;
+  decidedAt?: number;
+  proofNonce?: string;
+  token?: string; // bearer token for the agent after approval
+  secretHash: string; // sha256 of the requester's poll secret
+}
+
+export interface MatchSummary {
+  question: string;
+  domain: Domain | null;
+  similar: number; // people who faced a similar situation
+  close: number; // experiences that closely match
+  consented: number; // of the close matches, how many are licensable
+  matches: Array<{ id: string; title: string; score: number; consent: Consent; preview: string; domain: Domain }>;
+}
