@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api, agentRequests, addAgentRequest, type AgentReq } from "@/lib/client.ts";
 
-const AGENT = "Founder-Coach Agent";
+import { licenseMessage } from "@/lib/ensMessage.ts";
 type Lic = { id: string; status: string; capsuleId: string; token?: string };
 type Full = { title: string; situation: string; decision: string; failure: string; lesson: string; access: string };
 type Tool = { provider: string; endpoint: string; description: string; priceLabel: string };
@@ -13,17 +13,31 @@ export function AgentTab({ pendingTarget, onRequested }: { pendingTarget: { caps
   const [full, setFull] = useState<Record<string, Full>>({});
   const [purpose, setPurpose] = useState("");
   const [err, setErr] = useState<string | null>(null);
+  const [ens, setEns] = useState("");
+  const [sig, setSig] = useState<`0x${string}` | undefined>();
 
   useEffect(() => { setReqs(agentRequests()); }, []);
   useEffect(() => {
     if (pendingTarget) setPurpose(`Help a founder who asked: “${pendingTarget.question}”. Use the lesson only for this answer; no resale.`);
   }, [pendingTarget]);
 
+  /** Optional: prove the agent controls its ENS name by signing with the wallet the name resolves to. */
+  async function sign() {
+    setErr(null);
+    const eth = (window as unknown as { ethereum?: { request: (a: { method: string; params?: unknown[] }) => Promise<any> } }).ethereum;
+    if (!eth || !pendingTarget) return setErr("No browser wallet found. Signing is optional; the ENS name is still resolved on-chain.");
+    try {
+      const [account] = await eth.request({ method: "eth_requestAccounts" });
+      const msg = licenseMessage(ens.trim().toLowerCase(), pendingTarget.capsuleId, purpose.slice(0, 400));
+      setSig(await eth.request({ method: "personal_sign", params: [msg, account] }));
+    } catch (e) { setErr((e as Error).message); }
+  }
+
   async function request() {
     if (!pendingTarget) return;
     setErr(null);
     try {
-      const r = await api("/api/licenses", { body: { capsuleId: pendingTarget.capsuleId, agent: AGENT, purpose } });
+      const r = await api("/api/licenses", { body: { capsuleId: pendingTarget.capsuleId, agent: ens, purpose, signature: sig } });
       addAgentRequest({ id: r.license.id, secret: r.secret, capsuleId: pendingTarget.capsuleId, title: pendingTarget.title });
       setReqs(agentRequests()); onRequested();
     } catch (e) { setErr((e as Error).message); }
@@ -50,9 +64,15 @@ export function AgentTab({ pendingTarget, onRequested }: { pendingTarget: { caps
         <h3>1 · Human context & consent <span className="muted small">(HEN)</span></h3>
         {pendingTarget && (
           <div className="box">
-            <p className="small">Request access to <b>“{pendingTarget.title}”</b> as <b>{AGENT}</b></p>
+            <p className="small">Request access to <b>“{pendingTarget.title}”</b></p>
+            <label className="small">Agent identity (ENS name, resolved on Ethereum)
+              <input value={ens} onChange={(e) => { setEns(e.target.value); setSig(undefined); }} placeholder="your-agent.eth" aria-label="Agent ENS name" />
+            </label>
             <textarea rows={3} value={purpose} onChange={(e) => setPurpose(e.target.value)} aria-label="Purpose" />
-            <button className="primary" onClick={request}>Send license request to the owner</button>
+            <div className="row">
+              <button className="ghost" onClick={sign} disabled={!ens.includes(".")}>{sig ? "Signed ✓" : "Sign with wallet (optional)"}</button>
+              <button className="primary" onClick={request} disabled={!ens.includes(".")}>Send license request to the owner</button>
+            </div>
             {err && <p className="err small">{err}</p>}
           </div>
         )}

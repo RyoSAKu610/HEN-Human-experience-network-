@@ -44,7 +44,19 @@ export function ApprovalsTab({ onChange }: { onChange: (pending: number) => void
       <div className="reqs">
         {rows.map((r) => (
           <article key={r.id} className={"req " + r.status}>
-            <div className="req-head"><b>{r.agent}</b><span className={"status " + r.status}>{r.status}</span></div>
+            <div className="req-head">
+              <span className="ens">
+                {r.agentEns?.avatar && <img src={r.agentEns.avatar} alt="" width={28} height={28} />}
+                <a href={`https://app.ens.domains/${r.agent}`} target="_blank" rel="noreferrer"><b>{r.agent}</b></a>
+              </span>
+              <span className={"status " + r.status}>{r.status}</span>
+            </div>
+            {r.agentEns && (
+              <p className="small muted">
+                ENS → {r.agentEns.address.slice(0, 6)}…{r.agentEns.address.slice(-4)} · {r.agentEns.signed ? "signed by this address ✓" : "name resolved, not signed"}
+                {r.agentEns.description ? <> · “{r.agentEns.description}”</> : null}
+              </p>
+            )}
             <p className="small">wants to use <b>“{r.capsuleTitle}”</b></p>
             <p className="small muted">Purpose: {r.purpose}</p>
             {r.status === "pending" && (

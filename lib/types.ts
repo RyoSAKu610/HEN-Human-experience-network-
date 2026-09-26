@@ -34,7 +34,8 @@ export type LicenseStatus = "pending" | "approved" | "declined" | "cancelled" | 
 export interface LicenseRequest {
   id: string;
   capsuleId: string;
-  agent: string;
+  agent: string; // ENS name
+  agentEns?: { name: string; address: string; avatar: string | null; description: string | null; url: string | null; signed: boolean };
   purpose: string;
   status: LicenseStatus;
   createdAt: number;

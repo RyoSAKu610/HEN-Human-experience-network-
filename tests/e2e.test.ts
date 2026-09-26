@@ -39,9 +39,12 @@ test("full HEN flow: ask → contribute (World ID) → agent license → fresh a
   assert.equal((await call("/api/capsules", { capsule: cap, consent: "licensable", proof: proof(ctx2.data.rp_context.nonce) })).status, 401);
 
   // agent requests a license
-  const lic = await call("/api/licenses", { capsuleId: id, agent: "Test Agent", purpose: "answer one founder" });
+  // agent must be an ENS name
+  assert.equal((await call("/api/licenses", { capsuleId: id, agent: "", purpose: "x" })).status, 400);
+  const lic = await call("/api/licenses", { capsuleId: id, agent: "test-agent.eth", purpose: "answer one founder" });
   assert.equal(lic.status, 201);
   const L = lic.data.license.id, secret = lic.data.secret;
+  assert.equal(lic.data.license.agentEns.name, "test-agent.eth");
   // locked before approval
   const locked = await call(`/api/capsules/${id}`);
   assert.equal(locked.data.access, "summary");
@@ -52,7 +55,7 @@ test("full HEN flow: ask → contribute (World ID) → agent license → fresh a
   const wrong = await call(`/api/licenses/${L}/decide`, { decision: "approve", proof: proof(c1.data.rp_context.nonce, "0xdemo" + "f".repeat(32)) });
   assert.equal(wrong.status, 403);
   // a proof issued for another request cannot be reused here
-  const otherLic = await call("/api/licenses", { capsuleId: id, agent: "Other", purpose: "x" });
+  const otherLic = await call("/api/licenses", { capsuleId: id, agent: "other-agent.eth", purpose: "x" });
   const cOther = await call("/api/world/context", { purpose: "approve", licenseId: otherLic.data.license.id });
   assert.equal((await call(`/api/licenses/${L}/decide`, { decision: "approve", proof: proof(cOther.data.rp_context.nonce) })).status, 401);
   // decline path: nothing shared
