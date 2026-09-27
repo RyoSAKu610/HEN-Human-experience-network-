@@ -6,6 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "demo": "next build && cross-env HEN_ENS_FALLBACK=1 next start -p 3000",
+    "demo:offline": "next build && cross-env HEN_ENS_STUB=1 next start -p 3000",
     "test": "node --test --experimental-strip-types tests/e2e.test.ts"
   },
   "dependencies": {
@@ -24,6 +26,10 @@
   "devDependencies": {
     "@types/node": "^26.6.3",
     "@types/react": "^19.3.0",
+    "cross-env": "^10.1.0",
     "typescript": "^7.0.2"
+  },
+  "engines": {
+    "node": ">=20.9"
   }
 }

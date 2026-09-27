@@ -1,87 +1,180 @@
-# HEN — Human Experience Network
+<p align="center"><img src="docs/cover.png" alt="HEN — Human Experience Network" width="720"></p>
 
-**AI connects you to humanity’s experience.** HEN lets people turn a lived experience into an anonymized *Experience Capsule*. The original memory stays encrypted in their own vault. AI agents can find capsules and ask to use one, and each use needs **fresh human approval through World ID**. Agents act on the outside world through **Monid**.
+<h1 align="center">HEN — Human Experience Network</h1>
 
-ETHGlobal Tokyo 2026.
+<p align="center"><b>Memory is non-renewable. AI connects you to humanity’s experience — only with human consent.</b><br>
+ETHGlobal Tokyo 2026 · World ID · ENS · Intercepta · x402 · Monid</p>
 
-## What works
+<p align="center">
+<a href="https://hen-human-experience-network.vercel.app">▶ Live demo</a> ·
+<a href="docs/HEN_pitch_demo.mp4">🎬 Pitch video (3:46)</a> ·
+<a href="#-run-the-demo-in-one-minute">⚡ Run locally</a> ·
+<a href="#-pitch-demo-script-2-minutes">🎤 Demo script</a> ·
+<a href="#-sponsor-integrations-where-the-code-is">🧩 Sponsor code</a>
+</p>
 
-| Flow | Where | How |
-|---|---|---|
-| Ask: *“My startup is about to fail. What should I do?”* → “N people faced this · 3 closely match · K consented” | Ask tab, `POST /api/ask` | TF-IDF similarity + domain detection over all capsules; counts are computed, not scripted |
-| Write a memory → anonymized capsule (what happened / decision / what failed / lesson) | Share tab, `POST /api/capsules/preview` | Claude API if `ANTHROPIC_API_KEY` is set, otherwise local rules; names, years, amounts, links and handles are scrubbed server-side |
-| Private vault | browser | AES-256-GCM in the browser; the key never leaves the device, and the server stores ciphertext only |
-| Publish with proof of personhood | `POST /api/world/context` → IDKit → `POST /api/capsules` | World ID 4 (IDKit 4.3); the signal is bound to the SHA-256 of the exact capsule, so editing after the proof is rejected |
-| Agent license request | Agent tab, `POST /api/licenses` | Agent receives a one-time secret; the capsule stays locked (`GET /api/capsules/:id` returns only a summary) |
-| **Fresh human approval** before the protected action | Approvals tab, `POST /api/licenses/:id/decide` | New RP-signed request per approval (5-minute TTL, single-use nonce, signal = request id, `require_user_presence`), and the nullifier must equal the capsule owner’s |
-| Decline / cancel path | same | Declining needs no proof. Closing World ID leaves the request pending. Requests expire after 15 min. Nothing is shared in any of these cases |
-| Agent gets access | `GET /api/licenses?id=` + `x-hen-secret`, then `GET /api/capsules/:id` with `Bearer` | The token opens only that capsule, never the vault |
-| Monid: discover → inspect → price → run | Agent tab, `POST /api/monid` | Same HTTP API the official `@monid-ai/cli` uses (`https://api.monid.ai/v1/...`, Bearer key) |
+---
 
-Without keys, World ID and Monid run in **demo mode**. The chips in the header show `demo` or `live`. Demo World ID is a simulator dialog, but the server still enforces the single-use nonce, the signal binding and the owner nullifier. It also has a “Verify as someone else” button, which shows the server rejecting a different human.
+## The idea in 30 seconds
 
-## ENS · Intercepta · x402 (agent side)
+AI can generate infinite content. Humans can’t live infinite lives. A founder’s near-failure, a nurse’s thirty years of intuition, a first love: once gone, they can’t be recreated.
 
-HEN protects the human side with World ID. The agent side has three safeguards:
+**HEN turns lived experience into anonymized *Experience Capsules*** (what happened · what was decided · what failed · what was learned). The original memory stays encrypted in the owner’s own vault. When you ask your AI *“My startup is about to fail — what should I do?”*, it answers with **how many real people faced this, which experiences match, and which owners let them be used.**
 
-- **ENS is the agent's identity.** A license request must name an ENS agent (`my-agent.eth`). HEN resolves it on Ethereum mainnet, loads its avatar and description, and can check that the request was signed by the resolved address. Code: `lib/ens.ts`.
-- **Intercepta screens before any money moves.** The paying wallet (and the ENS address) goes through Intercepta Quick Scan (`GET /account/{address}/quick-scan`, `X-API-KEY`) when the request is made. Hard traits (`sanction_address`, `known_scammer`, `blacklist`, `attack_money_target`, `fake_phishing_transfer`) or a toxic score of 70 or more block the request with visible reasons, and it never reaches the owner. A score of 40–69 is flagged for the owner to review. If the screen itself fails, the request is blocked. Code: `lib/intercepta.ts`.
-- **x402 makes the license paid.** After the owner's fresh World ID approval, the agent pays USDC on Base Sepolia through x402 (`POST /api/licenses/:id/access`, `@x402/next` `withX402`). Inside the handler, before settlement, HEN checks that the payment was signed by the wallet that was screened, then **runs Intercepta again** on the payer. `withX402` settles only if the handler returns less than 400, so a blocked payer's USDC never moves. Code: `app/api/licenses/[id]/access/route.ts`.
+- **Humans stay in control.** Every capsule is backed by a real human (World ID). Every time an AI agent wants to use one, the owner gives **fresh World ID approval**, and can always decline.
+- **Agents are accountable.** Agents identify with **ENS**, their wallets are screened by **Intercepta** before any money moves, and they pay per license with **x402**.
+- **Agents can act.** **Monid** gives the agent one integration to discover, inspect, price and run external tools.
 
-Demo: on the Agent tab, click “Try a sanctioned wallet”. That request is **blocked** with the reason `sanction_address`. A normal wallet is **allowed**, then paid and unlocked after approval.
+> **HEN provides the human context and consent. Monid provides the capabilities to act.**
 
-### Intercepta API feedback
-- The `quick-scan` response (`toxicScore` + `traits[]`) was easy to map to allow / review / block. A short published list of every trait name with a severity would make policies safer than hard-coding names.
-- The path lives under `/api/public/v2/extension/...`. The word “extension” suggests it's for the browser extension, and a documented `/v2/account/...` alias would be clearer for server-side payment flows.
-- Please document whether `toxicScore` is 0–100 on every endpoint (quick vs deep scan), plus the recommended block and review thresholds for payments.
-- An official x402 example (screen `authorization.from` before settlement) would save every team the same glue code.
+---
 
-## Run
+## ⚡ Run the demo in one minute
+
+Needs **Node.js 20.9+** (22 recommended). **No API keys needed.**
 
 ```bash
+git clone https://github.com/RyoSAKu610/HEN-Human-experience-network-.git hen
+cd hen
 npm install
-cp .env.example .env.local   # optional: leave empty for demo mode
-npm run dev                  # http://localhost:3000
+npm run demo          # builds, then serves http://localhost:3000
 ```
 
-Tests (against a running server):
+Open **http://localhost:3000**. Everything works end to end in **demo mode**.
 
-```bash
-npm run build && npm start -- -p 3100 &
-npm test                     # BASE=http://localhost:3100
-```
+| Command | Use it when |
+|---|---|
+| `npm run demo` | Normal pitch. ENS names resolve on Ethereum mainnet. If the Wi-Fi drops, the agent card says “ENS (offline demo)” instead of failing. |
+| `npm run demo:offline` | **No internet at all.** Every flow still runs; ENS is shown as “offline demo”. |
+| `npm run dev` | Development with hot reload. |
+| `npm test` | End-to-end tests against a running server (`BASE=http://localhost:3000 npm test`). |
+
+**Reset between rehearsals:** click **“Reset demo”** at the bottom of the page. It clears new capsules, requests and this browser’s demo identity.
+
+The header chips show what is real right now: `World ID · demo/live`, `Monid · demo/live`, `Intercepta · demo/live`, `x402 · off/$0.01`.
+
+---
+
+## 🎤 Pitch demo script (≈2 minutes)
+
+**Before you go on stage**
+1. `npm run demo` (or open the live demo) → click **Reset demo**.
+2. Browser full screen, zoom 110–125%, only this tab open.
+3. Keep this README open on your phone for the lines to paste below.
+4. Backup: if anything fails, play [`docs/HEN_pitch_demo.mp4`](docs/HEN_pitch_demo.mp4).
+
+| # | Click | Say | Judges see |
+|---|---|---|---|
+| 1 | **Ask** tab → paste line A → **Ask** | “Instead of another generic answer…” | *“N people have faced a similar situation · 3 closely match · K allowed use.”* |
+| 2 | **Share an experience** → **Use a sample memory** → **Create Experience Capsule** | “My real memory never leaves my vault. AI turns it into an anonymized capsule.” | Names, years and amounts replaced by `[name]`, `[year]`; four fields. |
+| 3 | **Verify with World ID & publish** → **Verify I’m human** | “World ID proves a real human is behind it, without HEN owning my identity.” | Proof bound to this exact capsule; published. |
+| 4 | **Ask** → paste line B → **Ask** → **Ask the owner via my agent →** | “Now an AI agent wants to use my experience.” | Agent request form. |
+| 5 | ENS name: `founder-coach.eth` → **Try a sanctioned wallet** → **Send** | “Agents are accountable: ENS identity, and Intercepta screens the wallet before any payment.” | 🔴 **Blocked by Intercepta: sanction_address.** Never reaches the owner. |
+| 6 | Clear the wallet field → **Send license request** | “A clean agent gets through…” | Request **pending**. |
+| 7 | **Approvals** → **Approve with World ID** → **Verify as someone else** | “…but only the human who lived it can approve.” | ❌ *“a different human owns this experience.”* |
+| 8 | **Approve with World ID** → **Verify I’m human** | “Fresh human approval, right before the protected action. Declining is always one click.” | ✅ **Approved.** |
+| 9 | **Agent** tab → **Discover** → click the first tool → **Run** | “HEN gives the human context. Monid gives the capabilities to act.” | Licensed lesson + Monid result → **Agent answer**. |
+
+**Line A** `My startup is about to fail. What should I do?`
+**Line B** `Our SaaS startup was about to fail, 6 weeks of runway, investor pulled out.`
+
+---
+
+## Screenshots
+
+| Ask | Capsule review | World ID |
+|---|---|---|
+| ![Ask](docs/screens/01_ask_matches.png) | ![Capsule](docs/screens/02_capsule_review.png) | ![World ID](docs/screens/03_world_id_contribute.png) |
+| **Intercepta blocks** | **Owner inbox** | **Fresh approval** |
+| ![Blocked](docs/screens/04_intercepta_blocked.png) | ![Inbox](docs/screens/05_approval_inbox.png) | ![Approve](docs/screens/06_fresh_approval.png) |
+
+![Agent: HEN + Monid](docs/screens/07_agent_hen_monid.png)
+
+---
+
+## What’s real in demo mode (for judges)
+
+| Piece | Demo mode (no keys) | Live mode (keys set) |
+|---|---|---|
+| **World ID** | A simulator dialog instead of World App. **The server checks are real:** single-use signed request, signal bound to the capsule / request, same-human (nullifier) check, replay rejection. | IDKit 4.3 + `developer.world.org/api/v4/verify` |
+| **ENS** | Real mainnet resolution (`npm run demo`); offline stand-in only when there’s no internet, and it’s labelled. | Same |
+| **Intercepta** | Local list of public OFAC-sanctioned addresses, labelled “(demo)”. The block / review / allow policy is the real one. | `api.web3antivirus.io` quick-scan with your key |
+| **x402** | Off: approval unlocks directly. | USDC on Base Sepolia, settled only after Intercepta clears the payer again |
+| **Monid** | Local catalog with the same response shapes, labelled `demo`. | `api.monid.ai` discover / inspect / run |
+| **Capsule AI** | Local anonymization rules | Claude API |
+| **Matching, vault encryption, licensing, tokens** | Real | Real |
+
+The seed network (282 capsules) is synthetic, so the counts on the Ask tab include generated examples.
+
+---
+
+## 🧩 Sponsor integrations (where the code is)
+
+| Sponsor | What HEN does with it | Code |
+|---|---|---|
+| **World ID** | Proof of personhood to publish; **fresh approval** (new signed request, user presence, same nullifier) before every license | [RP signing](lib/world.ts#L37) · [verify](lib/world.ts#L71-L90) · [widget](components/WorldVerify.tsx#L38) · [same-human check](app/api/licenses/%5Bid%5D/decide/route.ts#L22) · [decline path](app/api/licenses/%5Bid%5D/decide/route.ts#L17) |
+| **ENS** | Agent identity: name → address, avatar, description; optional signature by the resolved address | [resolve](lib/ens.ts#L39) · [signature check](lib/ens.ts#L55) · [approval card](components/ApprovalsTab.tsx) |
+| **Intercepta** | Screens the paying wallet when the request is made **and again right before settlement**; fails closed | [API call](lib/intercepta.ts#L51) · [policy](lib/intercepta.ts#L24-L35) · [at request](app/api/licenses/route.ts#L26) · [before settlement](app/api/licenses/%5Bid%5D/access/route.ts#L32) |
+| **x402** | Paid license: `withX402`, settles only if the handler succeeds | [paid route](app/api/licenses/%5Bid%5D/access/route.ts#L43) · [agent pays](components/AgentTab.tsx) |
+| **Monid** | Agent tools: discover → inspect → price → run | [client](lib/monid.ts#L37) · [UI](components/AgentTab.tsx) |
+
+---
 
 ## Going live
 
-**World ID** (developer.world.org)
-1. Create an app and copy the `app_id`, the `rp_id` and the signing key.
-2. Create the action `hen-owner` and set its max verifications to unlimited. The same human proves ownership on every approval.
-3. Set `NEXT_PUBLIC_WLD_APP_ID`, `WLD_RP_ID`, `WLD_RP_SIGNING_KEY` and `NEXT_PUBLIC_WLD_ENV=staging`, then test with https://simulator.worldcoin.org/.
-4. Switch to `production` for the demo on stage.
+Copy `.env.example` to `.env.local` (or set the same variables in Vercel) and fill in what you have. Each service switches to `live` on its own.
 
-**Monid**: create a key at app.monid.ai/access/api-keys and set `MONID_API_KEY`. Runs cost real balance, and the UI shows the price before **Run**.
+| Variable | Where to get it | Notes |
+|---|---|---|
+| `NEXT_PUBLIC_WLD_APP_ID`, `WLD_RP_ID`, `WLD_RP_SIGNING_KEY` | developer.world.org | Create the action **`hen-owner`** with **unlimited** verifications. The signing key stays server-side. |
+| `NEXT_PUBLIC_WLD_ENV` | — | `staging` (test with simulator.worldcoin.org) or `production` |
+| `INTERCEPTA_API_KEY` | Intercepta (free sandbox key for hackers) | Optional thresholds: `INTERCEPTA_BLOCK_SCORE` (70), `INTERCEPTA_REVIEW_SCORE` (40) |
+| `X402_PAY_TO` | your receiving wallet | Turns on paid licenses. `X402_NETWORK=eip155:84532` (Base Sepolia), `X402_PRICE=$0.01` |
+| `MONID_API_KEY` | app.monid.ai/access/api-keys | Runs cost real balance; the price shows before **Run** |
+| `ENS_RPC_URL` | any mainnet RPC | Optional, for faster ENS lookups |
+| `ANTHROPIC_API_KEY` | console.anthropic.com | Optional, better capsule extraction |
 
-**Claude (optional)**: set `ANTHROPIC_API_KEY` for better capsule extraction.
+**Deploy:** import the repo in Vercel (framework: Next.js), add the variables, deploy. Storage is in memory plus a local JSON file, fine for a demo; use Postgres or KV for real persistence.
 
-Deploy: `vercel` with the same env vars. The store is in memory plus a local JSON file. On serverless it resets when the instance recycles, which is fine for a demo. Use Postgres or KV for real persistence.
+---
 
 ## Architecture
 
 ```
-browser ── memory ──► AES-GCM ──► /api/capsules (ciphertext only)
-   │           └────► /api/capsules/preview (anonymize → capsule, plaintext not stored)
-   │
-   ├─ IDKit 4 ◄── rp_context (server-signed, single-use, signal-bound) ── /api/world/context
-   │     └─ proof ─► server: nonce + signal + presence + owner nullifier ─► developer.world.org/api/v4/verify/{rp_id}
-   │
-agent ─► /api/licenses (pending) ─► owner approves with fresh proof ─► token ─► /api/capsules/:id (licensed)
-agent ─► /api/monid ─► api.monid.ai  /v1/discover · /v1/inspect · /v1/run · /v1/runs/:id
+owner browser ── memory ──► AES-256-GCM (key never leaves the device) ──► /api/capsules  (ciphertext only)
+      │               └───► /api/capsules/preview  (anonymize → capsule; plaintext not stored)
+      └── World ID ◄── /api/world/context  (server-signed, single-use, bound to the capsule or request)
+
+agent (ENS) ──► /api/licenses ──► Intercepta screen ──✗ blocked (never reaches the owner)
+                                          └──✓ pending ──► owner: fresh World ID ──► approved
+          ──► /api/licenses/:id/access  (x402: verify ► Intercepta again ► settle) ──► token ──► /api/capsules/:id
+          ──► /api/monid  (discover · inspect · run)
 ```
 
-`lib/world.ts` handles World ID, `lib/monid.ts` Monid, `lib/capsule.ts` anonymization and extraction, `lib/match.ts` matching, and `lib/store.ts` storage.
+`lib/world.ts` World ID · `lib/ens.ts` ENS · `lib/intercepta.ts` Intercepta · `lib/x402.ts` x402 · `lib/monid.ts` Monid · `lib/capsule.ts` anonymization · `lib/match.ts` matching · `lib/store.ts` storage.
 
-## Honest limits
+---
 
-- The live World ID and Monid calls were written against the IDKit 4.3 types and the Monid CLI’s own client. They could not be exercised end to end from the build machine, whose network blocks those hosts. Run the staging check above before the demo.
-- The seed network (282 capsules) is synthetic, so similarity counts include generated examples.
-- Local anonymization is rule-based. Always review a capsule before publishing (the UI requires this step).
+## Judge FAQ
+
+**Why World ID and not just a login?** HEN must know a real human stands behind each experience and each consent, but must never own that person’s identity. HEN stores only an RP-scoped nullifier.
+
+**What does “fresh approval” mean exactly?** Every approval needs a new request signed by our server, valid 5 minutes, usable once, bound to that request’s id, with user presence, from the same human who published the capsule. A replayed proof, a proof for another request, or a different person are all rejected (covered by `npm test`).
+
+**Can the agent read the original memory?** No. The server only has ciphertext. A license token opens one anonymized capsule, never the vault.
+
+**What stops a scam agent?** It must present an ENS identity, and Intercepta screens its paying wallet before the owner ever sees the request, and again before any USDC settles. If screening fails, HEN blocks.
+
+---
+
+## Intercepta API feedback
+- The `quick-scan` response (`toxicScore` + `traits[]`) was easy to map to allow / review / block. A published list of every trait name with its severity would make policies safer than hard-coding names.
+- The path lives under `/api/public/v2/extension/...`. “Extension” suggests the browser extension; a documented `/v2/account/...` alias would be clearer for server-side payment flows.
+- Please document whether `toxicScore` is 0–100 on every endpoint (quick vs deep scan), plus recommended block / review thresholds for payments.
+- An official x402 example (screen `authorization.from` before settlement) would save every team the same glue code.
+
+## Known limits
+- Live World ID, Intercepta, x402 settlement and Monid were written against the official SDKs and APIs, but the build machine’s network blocked those hosts, so run a staging check with your keys before relying on live mode.
+- Local anonymization is rule-based. The UI always makes the owner review a capsule before publishing.
+
+<p align="center"><img src="docs/logo.png" width="96" alt="HEN logo"><br>Built at ETHGlobal Tokyo 2026</p>

@@ -17,15 +17,15 @@ export interface AgentIdentity {
   description: string | null;
   url: string | null;
   signed: boolean; // agent proved control of the name's address
+  offline?: boolean; // ENS could not be reached and the offline demo fallback was used
 }
 
 import { licenseMessage } from "./ensMessage.ts";
 
 export async function resolveAgent(input: string, proof?: { capsuleId: string; purpose: string; signature?: `0x${string}` }): Promise<AgentIdentity> {
-  // Test-only stub (CI has no Ethereum RPC). Never set in production.
-  if (process.env.HEN_ENS_STUB === "1") {
-    return { name: input.trim().toLowerCase(), address: "0x000000000000000000000000000000000000dEaD", avatar: null, description: "test agent", url: null, signed: false };
-  }
+  // Offline stand-in, clearly flagged in the UI. HEN_ENS_STUB=1 forces it (tests / no internet).
+  const offline = (n: string): AgentIdentity => ({ name: n.trim().toLowerCase(), address: "0x000000000000000000000000000000000000dEaD", avatar: null, description: null, url: null, signed: false, offline: true });
+  if (process.env.HEN_ENS_STUB === "1") return offline(input);
   let name: string;
   try {
     name = normalize(input.trim());
@@ -34,7 +34,14 @@ export async function resolveAgent(input: string, proof?: { capsuleId: string; p
   }
   if (!name.includes(".")) throw new Error("use a full ENS name, e.g. my-agent.eth");
 
-  const address = await client.getEnsAddress({ name });
+  let address: Address | null;
+  try {
+    address = await client.getEnsAddress({ name });
+  } catch (e) {
+    // Venue Wi-Fi down during a pitch: HEN_ENS_FALLBACK=1 keeps the demo going, labelled "offline".
+    if (process.env.HEN_ENS_FALLBACK === "1") return offline(name);
+    throw new Error(`could not reach Ethereum to resolve ${name} (${(e as Error).message.slice(0, 80)})`);
+  }
   if (!address || !isAddress(address)) throw new Error(`${name} does not resolve to an address on ENS`);
 
   const [avatar, description, url] = await Promise.all([

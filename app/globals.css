@@ -93,3 +93,4 @@ label.small { display: grid; gap: 6px; color: var(--muted); }
 .blocked { border: 1px solid #7a3441; background: #2a1419; border-radius: 12px; padding: 10px 12px; }
 .linklike { background: none; border: 0; padding: 0; color: var(--amber); text-align: left; text-decoration: underline; }
 .status.blocked, .status.awaiting_payment { color: var(--amber); } .status.blocked { color: var(--red); }
+.reset { text-align: center; margin-top: 40px; }

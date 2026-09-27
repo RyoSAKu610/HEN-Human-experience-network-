@@ -46,6 +46,14 @@ export default function Home() {
       <div hidden={tab !== "Share an experience"}><ShareTab onPublished={refresh} /></div>
       <div hidden={tab !== "Approvals"}><ApprovalsTab onChange={setPending} /></div>
       <div hidden={tab !== "Agent"}><AgentTab pendingTarget={target} onRequested={() => setTarget(null)} /></div>
+      {st?.world.mode === "demo" && (
+        <p className="reset"><button className="ghost small-btn" onClick={async () => {
+          if (!confirm("Reset the demo? Clears all new capsules, requests and this browser's demo identity.")) return;
+          await api("/api/reset", { body: {} }).catch(() => {});
+          try { Object.keys(localStorage).filter((k) => k.startsWith("hen_")).forEach((k) => localStorage.removeItem(k)); } catch {}
+          location.reload();
+        }}>Reset demo</button></p>
+      )}
       <footer>ETHGlobal Tokyo 2026 · World ID proves a real human without HEN owning their identity · Monid gives agents one integration to external tools</footer>
     </main>
   );

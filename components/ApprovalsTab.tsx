@@ -54,7 +54,7 @@ export function ApprovalsTab({ onChange }: { onChange: (pending: number) => void
             </div>
             {r.agentEns && (
               <p className="small muted">
-                ENS → {r.agentEns.address.slice(0, 6)}…{r.agentEns.address.slice(-4)} · {r.agentEns.signed ? "signed by this address ✓" : "name resolved, not signed"}
+                {r.agentEns.offline ? "ENS (offline demo: name not resolved on-chain)" : <>ENS → {r.agentEns.address.slice(0, 6)}…{r.agentEns.address.slice(-4)} · {r.agentEns.signed ? "signed by this address ✓" : "name resolved, not signed"}</>}
                 {r.agentEns.description ? <> · “{r.agentEns.description}”</> : null}
               </p>
             )}
