@@ -65,7 +65,7 @@ The header chips show what is real right now: `World ID · demo/live`, `Monid ·
 
 | # | Click | Say | Judges see |
 |---|---|---|---|
-| 1 | **Ask** tab → paste line A → **Ask** | “Instead of another generic answer…” | *“N people have faced a similar situation · 3 closely match · K allowed use.”* |
+| 1 | **Ask** tab → paste line A → **Ask** | “Instead of another generic answer…” | *“154 people have faced a similar situation · 3 closely match · 2 allowed use.”* (Don’t click the agent button here: those capsules belong to other people.) |
 | 2 | **Share an experience** → **Use a sample memory** → **Create Experience Capsule** | “My real memory never leaves my vault. AI turns it into an anonymized capsule.” | Names, years and amounts replaced by `[name]`, `[year]`; four fields. |
 | 3 | **Verify with World ID & publish** → **Verify I’m human** | “World ID proves a real human is behind it, without HEN owning my identity.” | Proof bound to this exact capsule; published. |
 | 4 | **Ask** → paste line B → **Ask** → **Ask the owner via my agent →** | “Now an AI agent wants to use my experience.” | Agent request form. |

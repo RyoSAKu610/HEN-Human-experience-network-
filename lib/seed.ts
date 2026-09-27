@@ -161,7 +161,7 @@ const OTHER: Record<Exclude<Domain, "startup">, { sit: string[]; dec: string[]; 
 };
 
 export function seedCapsules(): Capsule[] {
-  const r = rng(20260926);
+  const r = rng(20260905);
   const pick = <T,>(a: T[]) => a[Math.floor(r() * a.length)];
   const out: Capsule[] = [];
   let n = 0;
