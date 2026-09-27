@@ -6,7 +6,7 @@
 ETHGlobal Tokyo 2026 · World ID · ENS · Intercepta · x402 · Monid</p>
 
 <p align="center">
-<a href="https://hen-human-experience-network.vercel.app">▶ Live demo</a> ·
+<a href="https://hen-experience-tokyo.vercel.app">▶ Live demo</a> ·
 <a href="docs/HEN_pitch_demo.mp4">🎬 Pitch video (3:46)</a> ·
 <a href="#-run-the-demo-in-one-minute">⚡ Run locally</a> ·
 <a href="#-pitch-demo-script-2-minutes">🎤 Demo script</a> ·
