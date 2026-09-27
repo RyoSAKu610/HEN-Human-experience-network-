@@ -7,7 +7,7 @@ ETHGlobal Tokyo 2026 · World ID · ENS · Intercepta · x402 · Monid</p>
 
 <p align="center">
 <a href="https://hen-experience-tokyo.vercel.app">▶ Live demo</a> ·
-<a href="docs/HEN_pitch_demo.mp4">🎬 Pitch video (3:46)</a> ·
+<a href="docs/HEN_pitch_demo_hq.mp4">🎬 Pitch video (3:46, HD)</a> ·
 <a href="#-run-the-demo-in-one-minute">⚡ Run locally</a> ·
 <a href="#-pitch-demo-script-2-minutes">🎤 Demo script</a> ·
 <a href="#-sponsor-integrations-where-the-code-is">🧩 Sponsor code</a>
@@ -61,7 +61,7 @@ The header chips show what is real right now: `World ID · demo/live`, `Monid ·
 1. `npm run demo` (or open the live demo) → click **Reset demo**.
 2. Browser full screen, zoom 110–125%, only this tab open.
 3. Keep this README open on your phone for the lines to paste below.
-4. Backup: if anything fails, play [`docs/HEN_pitch_demo.mp4`](docs/HEN_pitch_demo.mp4).
+4. Backup: if anything fails, play [`docs/HEN_pitch_demo_hq.mp4`](docs/HEN_pitch_demo_hq.mp4) (H.264, plays everywhere) or the smaller [`docs/HEN_pitch_demo.mp4`](docs/HEN_pitch_demo.mp4) (H.265, 28 MB).
 
 | # | Click | Say | Judges see |
 |---|---|---|---|
