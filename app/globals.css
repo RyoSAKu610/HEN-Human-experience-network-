@@ -94,3 +94,10 @@ label.small { display: grid; gap: 6px; color: var(--muted); }
 .linklike { background: none; border: 0; padding: 0; color: var(--amber); text-align: left; text-decoration: underline; }
 .status.blocked, .status.awaiting_payment { color: var(--amber); } .status.blocked { color: var(--red); }
 .reset { text-align: center; margin-top: 40px; }
+.lead-q { color: var(--muted); max-width: 760px; }
+.score { font-size: 20px; font-weight: 700; margin: 18px 0 6px; }
+.checkgroup h3 { margin: 22px 0 8px; color: var(--amber); }
+.check { display: grid; grid-template-columns: 28px 1fr; gap: 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin: 6px 0; }
+.check p { margin: 3px 0; } .check .mark { font-size: 20px; font-weight: 700; }
+.check.pass .mark { color: var(--teal); } .check.fail { border-color: #7a3441; } .check.fail .mark { color: var(--red); }
+.mono { font-family: ui-monospace, Menlo, monospace; }

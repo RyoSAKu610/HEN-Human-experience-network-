@@ -75,6 +75,8 @@ The header chips show what is real right now: `World ID · demo/live`, `Monid ·
 | 8 | **Approve with World ID** → **Verify I’m human** | “Fresh human approval, right before the protected action. Declining is always one click.” | ✅ **Approved.** |
 | 9 | **Agent** tab → **Discover** → click the first tool → **Run** | “HEN gives the human context. Monid gives the capabilities to act.” | Licensed lesson + Monid result → **Agent answer**. |
 
+**Judge asks “how do I know it’s secure?”** → open **Security checks** → **Run security checks**: 15 real attacks against HEN’s own API (replayed proof, proof for another request, different human, reading without a license, token on another capsule, sanctioned wallet, plaintext search of the server) with the server’s actual responses. It cleans up after itself.
+
 **Line A** `My startup is about to fail. What should I do?`
 **Line B** `Our SaaS startup was about to fail, 6 weeks of runway, investor pulled out.`
 
@@ -89,6 +91,10 @@ The header chips show what is real right now: `World ID · demo/live`, `Monid ·
 | ![Blocked](docs/screens/04_intercepta_blocked.png) | ![Inbox](docs/screens/05_approval_inbox.png) | ![Approve](docs/screens/06_fresh_approval.png) |
 
 ![Agent: HEN + Monid](docs/screens/07_agent_hen_monid.png)
+
+**Security checks** — every Judge FAQ answer, proven live:
+
+![Security checks](docs/screens/08_security_checks.png)
 
 ---
 
@@ -157,9 +163,11 @@ agent (ENS) ──► /api/licenses ──► Intercepta screen ──✗ blocke
 
 ## Judge FAQ
 
+Each answer below is demonstrated live on the **Security checks** tab.
+
 **Why World ID and not just a login?** HEN must know a real human stands behind each experience and each consent, but must never own that person’s identity. HEN stores only an RP-scoped nullifier.
 
-**What does “fresh approval” mean exactly?** Every approval needs a new request signed by our server, valid 5 minutes, usable once, bound to that request’s id, with user presence, from the same human who published the capsule. A replayed proof, a proof for another request, or a different person are all rejected (covered by `npm test`).
+**What does “fresh approval” mean exactly?** Every approval needs a new request signed by our server, valid 5 minutes, usable once, bound to that request’s id, with user presence, from the same human who published the capsule. A replayed proof, a proof for another request, or a different person are all rejected (shown live on the Security checks tab and covered by `npm test`).
 
 **Can the agent read the original memory?** No. The server only has ciphertext. A license token opens one anonymized capsule, never the vault.
 

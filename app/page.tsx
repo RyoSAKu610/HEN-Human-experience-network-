@@ -5,10 +5,11 @@ import { AskTab } from "@/components/AskTab.tsx";
 import { ShareTab } from "@/components/ShareTab.tsx";
 import { ApprovalsTab } from "@/components/ApprovalsTab.tsx";
 import { AgentTab } from "@/components/AgentTab.tsx";
+import { ChecksTab } from "@/components/ChecksTab.tsx";
 import { Logo } from "@/components/Logo.tsx";
 
 type Status = { world: { mode: string; environment?: string }; monid: { mode: string }; intercepta: { mode: string }; x402: { mode: string; price?: string }; ai: { mode: string }; capsules: number; humans: number };
-const TABS = ["Ask", "Share an experience", "Approvals", "Agent"] as const;
+const TABS = ["Ask", "Share an experience", "Approvals", "Agent", "Security checks"] as const;
 type Tab = (typeof TABS)[number];
 
 export default function Home() {
@@ -45,6 +46,7 @@ export default function Home() {
       <div hidden={tab !== "Ask"}><AskTab onUseExperience={(m, q) => { setTarget({ capsuleId: m.id, title: m.title, question: q }); setTab("Agent"); }} /></div>
       <div hidden={tab !== "Share an experience"}><ShareTab onPublished={refresh} /></div>
       <div hidden={tab !== "Approvals"}><ApprovalsTab onChange={setPending} /></div>
+      <div hidden={tab !== "Security checks"}><ChecksTab /></div>
       <div hidden={tab !== "Agent"}><AgentTab pendingTarget={target} onRequested={() => setTarget(null)} /></div>
       {st?.world.mode === "demo" && (
         <p className="reset"><button className="ghost small-btn" onClick={async () => {

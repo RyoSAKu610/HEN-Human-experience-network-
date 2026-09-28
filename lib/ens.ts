@@ -39,10 +39,15 @@ export async function resolveAgent(input: string, proof?: { capsuleId: string; p
     address = await client.getEnsAddress({ name });
   } catch (e) {
     // Venue Wi-Fi down during a pitch: HEN_ENS_FALLBACK=1 keeps the demo going, labelled "offline".
-    if (process.env.HEN_ENS_FALLBACK === "1") return offline(name);
+    if (process.env.HEN_ENS_FALLBACK === "1" || !process.env.WLD_RP_SIGNING_KEY) return offline(name);
     throw new Error(`could not reach Ethereum to resolve ${name} (${(e as Error).message.slice(0, 80)})`);
   }
-  if (!address || !isAddress(address)) throw new Error(`${name} does not resolve to an address on ENS`);
+  if (!address || !isAddress(address)) {
+    // Demo mode (no World ID keys): an unregistered demo name like founder-coach.eth is shown as "offline demo"
+    // instead of breaking the pitch. With live keys, an unresolvable name is always rejected.
+    if (process.env.HEN_ENS_FALLBACK === "1" || !process.env.WLD_RP_SIGNING_KEY) return offline(name);
+    throw new Error(`${name} does not resolve to an address on ENS`);
+  }
 
   const [avatar, description, url] = await Promise.all([
     client.getEnsAvatar({ name }).catch(() => null),

@@ -88,6 +88,16 @@ export const db = {
     save();
     return null;
   },
+  /** Used by the self-check to leave no trace in the demo data. */
+  purgeCapsule(id: string) {
+    const d = load();
+    const c = d.capsules.find((x) => x.id === id);
+    d.capsules = d.capsules.filter((x) => x.id !== id);
+    d.licenses = d.licenses.filter((l) => l.capsuleId !== id);
+    if (c?.vaultId) d.vault = d.vault.filter((v) => v.id !== c.vaultId);
+    save();
+  },
+  rawDump: () => JSON.stringify(load()),
   reset() {
     g.__henDB = { capsules: seedCapsules(), vault: [], licenses: [], nonces: {} };
     save();
